@@ -1,0 +1,7 @@
+{
+  "name": "Nyaa",
+  "description": "Nyaa.si source for Hayase",
+  "repository": "https://github.com/Dohzu/nyaa-hayase-extension/",
+  "entry": "nyaa.js",
+  "enabled": true
+}
