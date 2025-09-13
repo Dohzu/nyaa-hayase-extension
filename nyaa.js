@@ -1,7 +1,8 @@
 import AbstractSource from './abstract.js'
 
-// Ajoutez un proxy public.
-const PROXY_URL = 'https://cors-anywhere.herokuapp.com/' // ou un autre proxy
+// Proxy URL to bypass CORS restrictions
+const PROXY_URL = 'https://cors-anywhere.herokuapp.com/' 
+
 const NYAA_URL = atob('aHR0cHM6Ly9ueWFhLnNpLz9wYWdlPXJzcw==')
 
 export default new class Nyaa extends AbstractSource {
@@ -10,7 +11,7 @@ export default new class Nyaa extends AbstractSource {
    * @returns {Promise<Document>}
    **/
   async fetchRss (query) {
-    // La requête est désormais dirigée vers le proxy, qui la redirige vers Nyaa.si
+    // The request now goes through the proxy
     const res = await fetch(`${PROXY_URL}${NYAA_URL}&q=${encodeURIComponent(query)}`)
     if (!res.ok) throw new Error(`HTTP Error: ${res.status}`)
     const text = await res.text()
