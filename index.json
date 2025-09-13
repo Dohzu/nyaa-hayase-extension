@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Nyaa.si",
+    "id": "nyaa",
+    "version": "1.0.0",
+    "type": "torrent",
+    "accuracy": "low",
+    "ratio": 0,
+    "media": "sub",
+    "languages": [
+      "ALL"
+    ],
+    "icon": "https://nyaa.si/static/favicon.png",
+    "update": "gh:Dohzu/nyaa-hayase-extension",
+    "code": "gh:Dohzu/nyaa-hayase-extension/nyaa"
+  }
+]
