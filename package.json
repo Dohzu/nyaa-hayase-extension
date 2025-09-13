@@ -1,0 +1,7 @@
+{
+  "name": "nyaa-extensions",
+  "version": "1.0.0",
+  "description": "Extensions for Hayase",
+  "main": "index.json",
+  "types": "index.d.ts"
+}
