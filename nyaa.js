@@ -1,46 +1,44 @@
 import AbstractSource from './abstract.js'
 
-// Cette méthode est plus fiable que d'utiliser un proxy public
-const NYAA_URL = atob('aHR0cHM6Ly9ueWFhLnNpLz9wYWdlPXJzcw==')
+// URL de l'API Nyaa.si
+const API_URL = 'https://nyaaapi.onrender.com/nyaa'
 
 export default new class Nyaa extends AbstractSource {
   /**
    * @param {string} query
    * @returns {Promise<Document>}
    **/
-  async fetchRss (query) {
-    const res = await fetch(`${NYAA_URL}&q=${encodeURIComponent(query)}`)
+  async fetchJson (query) {
+    const res = await fetch(`${API_URL}?q=${encodeURIComponent(query)}`)
     if (!res.ok) throw new Error(`HTTP Error: ${res.status}`)
-    const text = await res.text()
-    const parser = new DOMParser()
-    return parser.parseFromString(text, 'text/xml')
+    const json = await res.json()
+    return json.torrents
   }
 
   /**
-   * @param {Document} xmlDoc
+   * @param {any[]} entries
    * @returns {import('./').TorrentResult[]}
    **/
-  map (xmlDoc) {
-    const items = Array.from(xmlDoc.querySelectorAll('item'))
-    return items.map(item => {
-      const title = item.querySelector('title')?.textContent || ''
-      const link = item.querySelector('link')?.textContent || ''
-      const description = item.querySelector('description')?.textContent || ''
-      const sizeMatch = description.match(/Size: ([\d.]+ (B|KB|MB|GB|TB))/)
-      const sizeBytes = sizeMatch ? this.parseSize(sizeMatch[1]) : 0
-      const pubDate = item.querySelector('pubDate')?.textContent || ''
-      const hashMatch = link.match(/btih:([a-fA-F0-9]{40})/)
-      const hash = hashMatch ? hashMatch[1] : ''
+  map (entries) {
+    return entries.map(item => {
+      // Les données de l'API JSON sont différentes du RSS.
+      // Nous utilisons les champs fournis par l'API.
+      const title = item.title || ''
+      const link = item.magnet || ''
+      const hash = item.torrentId || ''
+      const size = item.size || '0'
+      
+      const sizeBytes = this.parseSize(size)
 
       return {
         title,
         link,
         hash,
         size: sizeBytes,
-        date: new Date(pubDate),
-        seeders: 0, 
-        leechers: 0,
-        downloads: 0,
+        date: new Date(),
+        seeders: item.seeders || 0,
+        leechers: item.leechers || 0,
+        downloads: item.downloads || 0,
         accuracy: 'low'
       }
     })
@@ -57,22 +55,22 @@ export default new class Nyaa extends AbstractSource {
   async single ({ titles, episode, resolution, exclusions }) {
     if (!titles?.length) throw new Error('No titles provided')
     const query = `${titles[0]} ${resolution} ${episode}`
-    const xmlDoc = await this.fetchRss(query)
-    return this.map(xmlDoc)
+    const json = await this.fetchJson(query)
+    return this.map(json)
   }
 
   /** @type {import('./').SearchFunction} */
   async batch ({ titles, resolution, exclusions }) {
     if (!titles?.length) throw new Error('No titles provided')
     const query = `${titles[0]} ${resolution} [Batch]`
-    const xmlDoc = await this.fetchRss(query)
-    return this.map(xmlDoc)
+    const json = await this.fetchJson(query)
+    return this.map(json)
   }
-  
+
   movie = this.single
 
   async test () {
-    const res = await fetch(this.url)
+    const res = await fetch(API_URL + '?q=test')
     return res.ok
   }
 }()
