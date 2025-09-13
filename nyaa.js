@@ -5,8 +5,9 @@ const API_URL = 'https://nyaaapi.onrender.com/nyaa'
 
 export default new class Nyaa extends AbstractSource {
   /**
+   * Récupère les données de l'API Nyaa en format JSON.
    * @param {string} query
-   * @returns {Promise<Document>}
+   * @returns {Promise<any[]>}
    **/
   async fetchJson (query) {
     const res = await fetch(`${API_URL}?q=${encodeURIComponent(query)}`)
@@ -16,8 +17,22 @@ export default new class Nyaa extends AbstractSource {
   }
 
   /**
+   * Récupère les données d'un seul torrent par son ID.
+   * @param {number} id
+   * @returns {Promise<any[]>}
+   **/
+  async fetchById (id) {
+    const res = await fetch(`${API_URL}/id/${id}`)
+    if (!res.ok) throw new Error(`HTTP Error: ${res.status}`)
+    const json = await res.json()
+    // L'API renvoie un seul objet, nous le mettons dans un tableau pour la méthode map.
+    return [json]
+  }
+
+  /**
+   * Mappe les entrées de l'API en objets TorrentResult.
    * @param {any[]} entries
-   * @returns {import('./').TorrentResult[]}
+   * @returns {import('./index').TorrentResult[]}
    **/
   map (entries) {
     return entries.map(item => {
@@ -51,7 +66,7 @@ export default new class Nyaa extends AbstractSource {
     return parseFloat(value) * (1024 ** unitIndex)
   }
 
-  /** @type {import('./').SearchFunction} */
+  /** @type {import('./index').SearchFunction} */
   async single ({ titles, episode, resolution, exclusions }) {
     if (!titles?.length) throw new Error('No titles provided')
     const query = `${titles[0]} ${resolution} ${episode}`
@@ -59,7 +74,7 @@ export default new class Nyaa extends AbstractSource {
     return this.map(json)
   }
 
-  /** @type {import('./').SearchFunction} */
+  /** @type {import('./index').SearchFunction} */
   async batch ({ titles, resolution, exclusions }) {
     if (!titles?.length) throw new Error('No titles provided')
     const query = `${titles[0]} ${resolution} [Batch]`
@@ -72,5 +87,16 @@ export default new class Nyaa extends AbstractSource {
   async test () {
     const res = await fetch(API_URL + '?q=test')
     return res.ok
+  }
+
+  /**
+   * Fonction pour rechercher un torrent par son ID.
+   * @param {number} id - L'ID du torrent à rechercher.
+   * @returns {Promise<import('./index').TorrentResult[]>}
+   **/
+  async singleById (id) {
+    if (!id) throw new Error('No ID provided')
+    const json = await this.fetchById(id)
+    return this.map(json)
   }
 }()
